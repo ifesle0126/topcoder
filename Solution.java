@@ -56,6 +56,8 @@ public class Solution {
             for (int i = 0; i < seedLines.size(); i++) {
 //                float d = similarParallel(seedLines.get(i).getValue(), vector);
                 float d = similar(seedLines.get(i).getValue(), vector);
+//                float d = similarCus(seedLines.get(i).getValue(), vector);
+
 //                System.out.println(d);
                 if (d > maxScore) {
                     maxScore = d;
@@ -248,8 +250,8 @@ public class Solution {
         if (ad == 0 || bd == 0) {
             return 0;
         }
-        long a = (long) (ad * 100000000);
-        long b = (long) (bd * 100000000);
+        int a = (int) (ad * 100000000);
+        int b = (int) (bd * 100000000);
         int i = 0;
         long res = 0;
         while (b != 0) {

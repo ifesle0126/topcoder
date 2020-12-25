@@ -41,7 +41,7 @@ public class Solution {
         }
 
         Scanner allScanner = new Scanner(new File(allFile));
-        LinkedList<Pair<String, Float>> link = new LinkedList<>();
+        LinkedList<String> link = new LinkedList<>();
         ArrayList<Float> array = new ArrayList<>();
         while (allScanner.hasNext()) {
             String line = allScanner.nextLine();
@@ -54,7 +54,7 @@ public class Solution {
             float maxScore = 0;
             String maxId = null;
             for (int i = 0; i < seedLines.size(); i++) {
-//                double d = similarParallel(seedLines.get(i).getValue(), vector);
+//                float d = similarParallel(seedLines.get(i).getValue(), vector);
                 float d = similar(seedLines.get(i).getValue(), vector);
 //                System.out.println(d);
                 if (d > maxScore) {
@@ -66,15 +66,7 @@ public class Solution {
                 addQueue(link, array, maxId, maxScore, outputCount);
             }
         }
-        String[] result = new String[outputCount];
-        int c = 0;
-        for (Pair<String, Float> p : link) {
-            if (c >= outputCount) {
-                break;
-            }
-            result[c++] = p.getKey();
-        }
-        MainFrame.addSet(result);
+        MainFrame.addSet(link);
 
 /*        String[] result = new String[]{"0X123", "0X124", "0X253", "0X16C"};
 
@@ -82,9 +74,9 @@ public class Solution {
         MainFrame.addSet(result);*/
     }
 
-    private void addQueue(LinkedList<Pair<String, Float>> queue, List<Float> sorted, String id, float score, int count) {
+    private void addQueue(LinkedList<String> queue, List<Float> sorted, String id, float score, int count) {
         if (queue.size() == 0) {
-            queue.add(new Pair<>(id, score));
+            queue.add(id);
             sorted.add(score);
             return;
         }
@@ -100,7 +92,7 @@ public class Solution {
                 beg++;
             }
         }
-        queue.add(beg, new Pair<>(id, score));
+        queue.add(beg, id);
         if (queue.size() > count) {
             queue.removeLast();
         }
@@ -117,19 +109,19 @@ public class Solution {
         }
     }
 
-    private double similarParallel(double[] seedArr, double[] inArr) {
+    private float similarParallel(float[] seedArr, float[] inArr) {
         int step = 256;
-        List<Future<Double[]>> l = new ArrayList<>();
+        List<Future<Float[]>> l = new ArrayList<>();
         for (int i = 0; i + step - 1 < seedArr.length; i += step) {
-            Future<Double[]> d = executor.submit(new VectorMultiThread(seedArr, inArr, i, i + step - 1));
+            Future<Float[]> d = executor.submit(new VectorMultiThread(seedArr, inArr, i, i + step - 1));
             l.add(d);
         }
-        double sum = 0;
-        double aPow = 0;
-        double bPow = 0;
+        float sum = 0;
+        float aPow = 0;
+        float bPow = 0;
         try {
-            for (Future<Double[]> df : l) {
-                Double[] ds = df.get();
+            for (Future<Float[]> df : l) {
+                Float[] ds = df.get();
                 sum += ds[0];
                 aPow += ds[1];
                 bPow += ds[2];
@@ -137,17 +129,17 @@ public class Solution {
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-        return sum / (Math.sqrt(aPow) * Math.sqrt(bPow));
+        return sum / (float)(Math.sqrt(aPow) * Math.sqrt(bPow));
     }
 
-    private class VectorMultiThread implements Callable<Double[]> {
+    private class VectorMultiThread implements Callable<Float[]> {
 
-        private double[] as;
-        private double[] bs;
+        private float[] as;
+        private float[] bs;
         private int beg;
         private int end;
 
-        public VectorMultiThread(double[] as, double[] bs, int beg, int end) {
+        public VectorMultiThread(float[] as, float[] bs, int beg, int end) {
             this.as = as;
             this.bs = bs;
             this.beg = beg;
@@ -177,10 +169,10 @@ public class Solution {
         }*/
 
         @Override
-        public Double[] call() throws Exception {
-            double sum = 0;
-            double aPow = 0;
-            double bPow = 0;
+        public Float[] call() throws Exception {
+            float sum = 0;
+            float aPow = 0;
+            float bPow = 0;
             for (int i = beg; i <= end && i < as.length && i < bs.length; i++) {
                 if (as[i] == 0 && bs[i] == 0) {
                     continue;
@@ -195,10 +187,10 @@ public class Solution {
                 }
 
             }
-            return new Double[]{sum, aPow, bPow};
+            return new Float[]{sum, aPow, bPow};
         }
 
-        private double multi(double ad, double bd) {
+        private float multi(double ad, double bd) {
             if (ad == 0 || bd == 0) {
                 return 0;
             }
@@ -216,7 +208,7 @@ public class Solution {
                     ++i;
                 }
             }
-            return res / 100000000D;
+            return res / 100000000F;
         }
     }
 

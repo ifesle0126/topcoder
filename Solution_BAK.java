@@ -52,7 +52,54 @@ public class Solution_BAK {
             for (int i = 1; i < allArr.length; i++) {
                 vector[i - 1] = Float.parseFloat(allArr[i]);
             }
-            Float f = similarGroup(seedLines, vector);
+//            float maxScore = 0;
+//            String maxId = null;
+//            List<Future<Float>> fList = new ArrayList<>();
+
+//            for (int i = 0; i < seedLines.size(); i++) {
+/*                float d = similarParallel(seedLines.get(i).getValue(), vector);
+                float d = similarCus(seedLines.get(i).getValue(), vector);*/
+//                float d = similar(seedLines.get(i).getValue(), vector);
+//                if (d > maxScore) {
+//                    maxScore = d;
+//                    maxId = key;
+//                }
+//                Future<Float> f = executor.submit(new VectorMultiCallable(seedLines.get(i).getValue(), vector));
+//                fList.add(f);
+//            }
+            /*Optional<CompletableFuture<Pair>> pf = seedLines.stream().map(seedVector -> CompletableFuture.supplyAsync(() -> {
+                return new Pair(seedVector.getKey(), similar(seedVector.getValue(), vector));
+            }, executor)).max(new Comparator<CompletableFuture<Pair>>() {
+                @Override
+                public int compare(CompletableFuture<Pair> o1, CompletableFuture<Pair> o2) {
+                    try {
+                        float f1 = (float) o1.get().getValue();
+                        float f2 = (float) o2.get().getValue();
+                        if (f2 > f1) {
+                            return 1;
+                        } else if (f2 < f1) {
+                            return -1;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                    return 0;
+                }
+            });
+
+            if (pf.isPresent()) {
+                float d = (float) pf.get().get().getValue();
+                if (d > maxScore) {
+                    maxScore = d;
+                    maxId = key;
+                }
+            }
+            if (maxId != null && !maxId.isEmpty()) {
+                addQueue(link, array, maxId, maxScore, outputCount);
+            }*/
+            Float f= similarGroup(seedLines, vector);
             addQueue(link, array, key, f, outputCount);
         }
         MainFrame.addSet(link);
@@ -166,6 +213,152 @@ public class Solution_BAK {
             y = y * (1.5F - (xhalf * y * y));
             y = y * (1.5F - (xhalf * y * y));
             return f * y;
+        }
+    }
+
+
+
+    private float similar(float[] seedArr, float[] inArr) {
+        float sumNum = 0;
+        float sqrSeed = 0;
+        float sqrIn = 0;
+        for (int i = 0; i < seedArr.length && i < inArr.length; i++) {
+            float a = seedArr[i];
+            float b = inArr[i];
+            sumNum = sumNum + a * b;
+            sqrSeed = sqrSeed + a * a;
+            sqrIn = sqrIn + b * b;
+        }
+//        return sumNum / (float)( Math.sqrt(sqrSeed)* Math.sqrt(sqrIn));
+        return sumNum / sqrt(sqrSeed * sqrIn);
+    }
+
+    private float sqrt(float f) {
+        final float xhalf = f * 0.5F;
+        float y = Float.intBitsToFloat(0x5f375a86 - (Float.floatToIntBits(f) >> 1));
+        y = y * (1.5F - (xhalf * y * y));
+        y = y * (1.5F - (xhalf * y * y));
+        return f * y;
+    }
+
+    private float similarParallel(float[] seedArr, float[] inArr) {
+        int step = 256;
+        List<Future<Float[]>> l = new ArrayList<>();
+        for (int i = 0; i + step - 1 < seedArr.length; i += step) {
+            Future<Float[]> d = executor.submit(new VectorMultiThread(seedArr, inArr, i, i + step - 1));
+            l.add(d);
+        }
+        float sum = 0;
+        float aPow = 0;
+        float bPow = 0;
+        try {
+            for (Future<Float[]> df : l) {
+                Float[] ds = df.get();
+                sum += ds[0];
+                aPow += ds[1];
+                bPow += ds[2];
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        return sum / (float) (Math.sqrt(aPow) * Math.sqrt(bPow));
+    }
+
+
+    private class VectorMultiCallable implements Callable<Float> {
+
+        private float[] as;
+        private float[] bs;
+
+        public VectorMultiCallable(float[] as, float[] bs) {
+            this.as = as;
+            this.bs = bs;
+        }
+
+        @Override
+        public Float call() throws Exception {
+            return similar(as, bs);
+        }
+
+        private float similar(float[] seedArr, float[] inArr) {
+            float sumNum = 0;
+            float sqrSeed = 0;
+            float sqrIn = 0;
+            for (int i = 0; i < seedArr.length && i < inArr.length; i++) {
+                float a = seedArr[i];
+                float b = inArr[i];
+                sumNum = sumNum + a * b;
+                sqrSeed = sqrSeed + a * a;
+                sqrIn = sqrIn + b * b;
+            }
+//        return sumNum / (float)( Math.sqrt(sqrSeed)* Math.sqrt(sqrIn));
+            return sumNum / (sqrt(sqrSeed) * sqrIn);
+        }
+
+        private float sqrt(float f) {
+            float xhalf = f * 0.5F;
+            float y = Float.intBitsToFloat(0x5f375a86 - (Float.floatToIntBits(f) >> 1));
+            y = y * (1.5F - (xhalf * y * y));
+            y = y * (1.5F - (xhalf * y * y));
+            return f * y;
+        }
+    }
+
+    private class VectorMultiThread implements Callable<Float[]> {
+
+        private float[] as;
+        private float[] bs;
+        private int beg;
+        private int end;
+
+        public VectorMultiThread(float[] as, float[] bs, int beg, int end) {
+            this.as = as;
+            this.bs = bs;
+            this.beg = beg;
+            this.end = end;
+        }
+
+        @Override
+        public Float[] call() throws Exception {
+            float sum = 0;
+            float aPow = 0;
+            float bPow = 0;
+            for (int i = beg; i <= end && i < as.length && i < bs.length; i++) {
+                if (as[i] == 0 && bs[i] == 0) {
+                    continue;
+                } else if (as[i] == 0) {
+                    bPow = bPow + multi(bs[i], bs[i]);
+                } else if (bs[i] == 0) {
+                    aPow = aPow + multi(as[i], as[i]);
+                } else {
+                    sum = sum + multi(as[i], bs[i]);
+                    aPow = aPow + multi(as[i], as[i]);
+                    bPow = bPow + multi(bs[i], bs[i]);
+                }
+
+            }
+            return new Float[]{sum, aPow, bPow};
+        }
+
+        private float multi(double ad, double bd) {
+            if (ad == 0 || bd == 0) {
+                return 0;
+            }
+            long a = (long) (ad * 100000000);
+            long b = (long) (bd * 100000000);
+            int i = 0;
+            long res = 0;
+            while (b != 0) {
+                if ((b & 1) == 1) {
+                    res += (a << i);
+                    b = b >> 1;
+                    ++i;
+                } else {
+                    b = b >> 1;
+                    ++i;
+                }
+            }
+            return res / 100000000F;
         }
     }
 }

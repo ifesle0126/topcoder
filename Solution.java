@@ -2,6 +2,9 @@ import javafx.util.Pair;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,7 +46,7 @@ public class Solution {
             seedLines.add(new Pair<>(key, vector));
         }
         seedFileReader.close();
-        BufferedReader allReader = new BufferedReader(new FileReader(allFile));
+        BufferedReader allReader = new BufferedReader(new FileReader(allFile), 8192 * 16);
         LinkedList<String> link = new LinkedList<>();
         ArrayList<Float> array = new ArrayList<>();
         while ((line = allReader.readLine()) != null) {
@@ -53,11 +56,14 @@ public class Solution {
             for (int i = 1; i < allArr.length; i++) {
                 vector[i - 1] = Float.parseFloat(allArr[i]);
             }
-            Float f = similarGroup(seedLines, vector);
+            float f = similarGroup(seedLines, vector);
+
             addQueue(link, array, key, f, outputCount);
         }
-        MainFrame.addSet(link);
         allReader.close();
+
+        MainFrame.addSet(link);
+
 /*        String[] result = new String[]{"0X123", "0X124", "0X253", "0X16C"};
 
         //请通过此方法输出答案,多次调用会追加记录
@@ -116,7 +122,6 @@ public class Solution {
         }
         return maxScore;
     }
-
 
     private class VectorSimilar implements Callable<Pair<String, Float>> {
         private List<Pair<String, float[]>> board;
